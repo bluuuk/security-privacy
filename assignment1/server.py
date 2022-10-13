@@ -1,3 +1,4 @@
+import grp
 import cryptography.hazmat.primitives.asymmetric.x25519
 import cryptography.hazmat.primitives.hmac
 import cryptography.hazmat.primitives.ciphers.aead
@@ -6,18 +7,60 @@ from concurrent import futures
 import logging
 import grpc
 from proto import messages_pb2_grpc
+from proto import messages_pb2 as messages
 
+from enum import Enum
+
+
+class State(Enum):
+    INIT = 0
+    HANDSHAKE_PART = 1
+    HANDSHAKE_FINSHED = 2
+
+ERROR_DETAIL = "State automata out of sync with protocol state"
 
 class Server(messages_pb2_grpc.ServerServicer):
 
-    def InitiateHandshake(self, req, ctx):
-        pass
+    def __init__(self):
+        self.state = State.INIT
+        #super().__init__()
+
+    def InitiateHandshake(self, req, ctx: grpc.ServicerContext):
+        if self.state != State.INIT:
+            ctx.abort(grpc.StatusCode.PERMISSION_DENIED,details=ERROR_DETAIL)
+
+        somebytes = bytes([0, 255])
+
+        serverHello = messages.ServerHello(
+            nonce=somebytes,
+            key_share=somebytes,
+        )
+
+        return serverHello
 
     def Integrity(self, req, ctx):
-        pass
+        if self.state != State.HANDSHAKE_PART:
+            ctx.abort(grpc.StatusCode.PERMISSION_DENIED,details=ERROR_DETAIL)
+
+        somebytes = bytes([0, 255])
+
+        verifyClientHandshake = messages.VerifyIntegrity(
+            nonce=somebytes,
+            key_share=somebytes,
+        )
+
+        return verifyClientHandshake
 
     def TransferData(self, req, ctx):
-        pass
+        if self.state != State.HANDSHAKE_FINSHED:
+            ctx.abort(grpc.StatusCode.PERMISSION_DENIED,details=ERROR_DETAIL)
+
+        status = messages.Status(
+            message="We did it",
+            state=messages.Status.OK
+        )
+
+        return status
 
 
 def serve():

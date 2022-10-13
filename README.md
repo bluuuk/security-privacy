@@ -1,12 +1,12 @@
-<<<<<<< HEAD
 # security-privacy
 
 ## Generate a Public/Private Key Pair
 ```
 openssl genrsa -out private.pem 2048 
-openssl rsa -in private.pem -outform PEM -pubout -out public.pem
+openssl rsa -in .pem -outform PEM -pubout -out public.pem
 ```
-=======
+
+
 # Threat Model
 
 - Passive Man in the Middle (MitM) Attacker
@@ -31,4 +31,3 @@ We can reduce the inital messages but keep the idea of the protocol:
 # Removing integrity and authenticity
 
 Totally stupid idea :(
->>>>>>> cc2e6a35e1338e4f28a3861df3e5c7080c27b7eb
