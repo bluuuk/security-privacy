@@ -8,8 +8,9 @@ from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives.hmac import HMAC
 from cryptography.hazmat.primitives.hashes import SHA256
 from cryptography.hazmat.backends import default_backend
-from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
+from cryptography.exceptions import InvalidSignature
 import secrets
 
 NONCE_SIZE = 16
@@ -37,9 +38,28 @@ class CryptoHandshakeContainer:
         self.nonce = secrets.token_bytes(16)
         return self.key_share.public_key(),self.nonce
 
-    def validate_key_share(self,public_key : rsa.RSAPublicKey,message: bytes,signature : bytes):
+    def validate_key_share(self,public_key : rsa.RSAPublicKey,message: bytes,signature : bytes) -> bool:
+        try:
+            public_key.verify(
+                signature=signature,
+                data=message,
+                padding=padding.PSS(
+                    mgf=padding.MGF1(SHA256()),
+                    salt_length=padding.PSS.MAX_LENGTH
+                )
+            )
+        except InvalidSignature:
+            return False
+        return True
 
-
+    def create_key_share_signature(self,private_key : rsa.RSAPrivateKey) -> bytes:
+        return private_key.sign(
+                data=self.key_share.public_key(),
+                padding=padding.PSS(
+                    mgf=padding.MGF1(SHA256()),
+                    salt_length=padding.PSS.MAX_LENGTH
+                )
+            ) 
 
     def finish_key_share(self,other_public_share : X25519PublicKey,other_nonce: bytes):
         shared_secret = self.key_share.exchange(
