@@ -11,8 +11,6 @@ from google.protobuf import symbol_database as _symbol_database
 _sym_db = _symbol_database.Default()
 
 
-
-
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0emessages.proto\x12\x08messages\"H\n\x0b\x43lientHello\x12\r\n\x05nonce\x18\x01 \x01(\x0c\x12\x11\n\tkey_share\x18\x02 \x01(\x0c\x12\x17\n\x0fshare_signature\x18\x03 \x01(\x0c\"/\n\x0bServerHello\x12\r\n\x05nonce\x18\x01 \x01(\x0c\x12\x11\n\tkey_share\x18\x02 \x01(\x0c\"$\n\x0fVerifyIntegrity\x12\x11\n\tintegrity\x18\x01 \x01(\x0c\"1\n\rEncryptedData\x12\r\n\x05nonce\x18\x01 \x01(\x0c\x12\x11\n\tencrypted\x18\x02 \x01(\x0c\"\\\n\x06Status\x12\x0f\n\x07message\x18\x03 \x01(\t\x12%\n\x05state\x18\x04 \x01(\x0e\x32\x16.messages.Status.State\"\x1a\n\x05State\x12\x06\n\x02OK\x10\x00\x12\t\n\x05\x45RROR\x10\x01\x32\xcf\x01\n\x06Server\x12\x43\n\x11InitiateHandshake\x12\x15.messages.ClientHello\x1a\x15.messages.ServerHello\"\x00\x12\x43\n\tIntegrity\x12\x19.messages.VerifyIntegrity\x1a\x19.messages.VerifyIntegrity\"\x00\x12;\n\x0cTransferData\x12\x17.messages.EncryptedData\x1a\x10.messages.Status\"\x00\x62\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
