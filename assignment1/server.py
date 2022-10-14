@@ -1,15 +1,13 @@
-import grp
-import cryptography.hazmat.primitives.asymmetric.x25519
-import cryptography.hazmat.primitives.hmac
-import cryptography.hazmat.primitives.ciphers.aead
-import cryptography.utils
 from concurrent import futures
 import logging
+from enum import Enum
+
 import grpc
 from proto import messages_pb2_grpc
 from proto import messages_pb2 as messages
 
-from enum import Enum
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
 
 
 class State(Enum):
@@ -19,6 +17,10 @@ class State(Enum):
 
 ERROR_DETAIL = "State automata out of sync with protocol state"
 
+with open("./server/public.pem","rb") as f:
+    PUBLIC_KEY = serialization.load_pem_public_key(f.read(),None,default_backend())
+
+
 class Server(messages_pb2_grpc.ServerServicer):
 
     def __init__(self):
@@ -26,6 +28,7 @@ class Server(messages_pb2_grpc.ServerServicer):
         #super().__init__()
 
     def InitiateHandshake(self, req, ctx: grpc.ServicerContext):
+        
         if self.state != State.INIT:
             ctx.abort(grpc.StatusCode.PERMISSION_DENIED,details=ERROR_DETAIL)
 
@@ -36,6 +39,7 @@ class Server(messages_pb2_grpc.ServerServicer):
             key_share=somebytes,
         )
 
+        self.state = State.HANDSHAKE_PART
         return serverHello
 
     def Integrity(self, req, ctx):
@@ -45,10 +49,9 @@ class Server(messages_pb2_grpc.ServerServicer):
         somebytes = bytes([0, 255])
 
         verifyClientHandshake = messages.VerifyIntegrity(
-            nonce=somebytes,
-            key_share=somebytes,
+            integrity=somebytes,
         )
-
+        self.state = State.HANDSHAKE_FINSHED
         return verifyClientHandshake
 
     def TransferData(self, req, ctx):
@@ -59,6 +62,7 @@ class Server(messages_pb2_grpc.ServerServicer):
             message="We did it",
             state=messages.Status.OK
         )
+
 
         return status
 

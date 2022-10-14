@@ -20,9 +20,8 @@ message VerifyIntegrity{
 }
 
 message EncryptedData{
-    bytes iv = 1;
+    bytes nonce = 1;
     bytes encrypted = 2;
-    bytes integrity = 3;
 }
 
 message Status{

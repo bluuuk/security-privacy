@@ -3,6 +3,11 @@ import logging
 from proto import messages_pb2_grpc
 from proto import messages_pb2 as messages
 
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
+
+with open("./client/private.pem","rb") as f:
+    PRIVATE_KEY = serialization.load_pem_private_key(f.read(),None,default_backend())
 
 def run():
     # NOTE(gRPC Python Team): .close() is possible on a channel and should be
@@ -28,9 +33,8 @@ def run():
         verifyClientHandshake = stub.Integrity(verifyServerHandshake)
 
         encryptedData = messages.EncryptedData(
-            iv=somebytes,
+            noce=somebytes,
             encrypted=somebytes,
-            integrity=somebytes,
         )
 
         status = stub.TransferData(encryptedData)
