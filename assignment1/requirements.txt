@@ -1,0 +1,7 @@
+cffi==1.15.1
+cryptography==38.0.1
+grpcio==1.49.1
+grpcio-tools==1.49.1
+protobuf==4.21.7
+pycparser==2.21
+six==1.16.0
