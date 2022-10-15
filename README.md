@@ -1,3 +1,12 @@
+# security-privacy
+
+## Generate a Public/Private Key Pair
+```
+openssl genrsa -out private.pem 2048 
+openssl rsa -in .pem -outform PEM -pubout -out public.pem
+```
+
+
 # Threat Model
 
 - Passive Man in the Middle (MitM) Attacker
