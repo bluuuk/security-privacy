@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Any, Tuple
+import logging
 
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey,X25519PublicKey
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -25,12 +26,6 @@ def XOR(a:bytes,b:bytes) -> bytes:
         [a^b for a,b in zip(a,b)]
     )
 
-@dataclass
-class xy:
-    name : str
-
-
-xy(name="lukas")
 
 @dataclass
 class CryptoHandshakeContainer:
@@ -44,6 +39,11 @@ class CryptoHandshakeContainer:
     def key_share_init(self) -> Tuple[X25519PublicKey,bytes]:
         self.key_share = X25519PrivateKey.generate()
         self.nonce = secrets.token_bytes(16)
+
+        logging.debug(
+            f"Created public key with nonce {self.nonce}"
+        )
+
         return self.key_share.public_key(),self.nonce
 
     def finish_key_share(self,other_public_share : X25519PublicKey,other_nonce: bytes):
@@ -51,8 +51,16 @@ class CryptoHandshakeContainer:
             other_public_share
         )
 
+        logging.debug(
+            f"Computed {shared_secret=}"
+        )
+
         # acts like a one time pad, enough if one nonce is truly random
         combined_nonce = XOR(self.nonce,other_nonce)
+
+        logging.debug(
+            f"Computed {combined_nonce=}"
+        )
 
         keys = HKDF(
             algorithm=SHA256(),
@@ -62,10 +70,20 @@ class CryptoHandshakeContainer:
             info=None
         ).derive(shared_secret)
 
+        # forget key material
+        self.key_share = None
+
         self.encryption_key = keys[:KEY_LENGTH]
         self.integrity_key = keys[KEY_LENGTH:]
 
+        logging.debug(
+            f"Derived encryption key {self.encryption_key} and integrity key {self.integrity_key}"
+        )
+
     def validate_key_share(self,public_key : rsa.RSAPublicKey,message: bytes,signature : bytes) -> bool:
+        logging.debug(
+            f"Checking signature {signature} for {message}"
+        )
         try:
             public_key.verify(
                 algorithm=SHA256(),
@@ -81,7 +99,7 @@ class CryptoHandshakeContainer:
         return True
 
     def create_key_share_signature(self,private_key : rsa.RSAPrivateKey) -> bytes:
-        return private_key.sign(
+        sig =  private_key.sign(
                 data=self.key_share.public_key().public_bytes(Encoding.Raw,PublicFormat.Raw),
                 algorithm=SHA256(),
                 padding=padding.PSS(
@@ -89,8 +107,11 @@ class CryptoHandshakeContainer:
                     salt_length=padding.PSS.MAX_LENGTH
                 )
             ) 
+        logging.debug(f"Create key share signature {sig}")
+        return sig
 
     def check_integrity(self,message,target) -> bool:
+        logging.debug(f"Checking integrity for {target} of message {message}")
         instance = HMAC(
             key=self.integrity_key,
             algorithm=SHA256(),
@@ -106,6 +127,7 @@ class CryptoHandshakeContainer:
         return True
     
     def create_integrity(self,message) -> bytes:
+
         instance = HMAC(
             key=self.integrity_key,
             algorithm=SHA256(),
@@ -113,9 +135,15 @@ class CryptoHandshakeContainer:
         )
 
         instance.update(message)
-        return instance.finalize()
+        mac =  instance.finalize()
+
+        logging.debug(f"Creating integrity value of {mac} for {message}")
+
+
+        return mac
 
     def encrypt(self,data : bytes) -> Tuple[bytes,bytes]:
+        logging.debug("Encrypting")
         instance = ChaCha20Poly1305(self.encryption_key)
         nonce = secrets.token_bytes(12)
 
@@ -124,6 +152,7 @@ class CryptoHandshakeContainer:
         )
 
     def decrypt(self,nonce : bytes,data : bytes) -> bytes:
+        logging.debug("Decrypting")
         instance = ChaCha20Poly1305(self.encryption_key)
 
         return instance.decrypt(

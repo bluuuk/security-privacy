@@ -18,6 +18,7 @@ class State(Enum):
     HANDSHAKE_FINSHED = 2
 
 ERROR_DETAIL = "State automata out of sync with protocol state"
+ERROR_INTEGRITY = "Integrity mismatch, aborting connection"
 
 with open("./server/public.pem","rb") as f:
     PUBLIC_KEY = serialization.load_pem_public_key(f.read())
@@ -28,9 +29,9 @@ class Server(messages_pb2_grpc.ServerServicer):
     def __init__(self):
         self.state = State.INIT
         self.cryptobox = None
+        # for later use in the Integrity() method
         self.client_hello = None
         self.server_hello = None
-        #super().__init__()
 
     def InitiateHandshake(self, req : messages.ClientHello, ctx: grpc.ServicerContext):
         
@@ -38,6 +39,11 @@ class Server(messages_pb2_grpc.ServerServicer):
             ctx.abort(grpc.StatusCode.PERMISSION_DENIED,details=ERROR_DETAIL)
 
         self.cryptobox = CryptoHandshakeContainer()
+
+        # checking authenticity of the client's public key
+        if not self.cryptobox.validate_key_share(PUBLIC_KEY,req.key_share,req.share_signature):
+            ctx.abort(grpc.StatusCode.PERMISSION_DENIED,details=ERROR_INTEGRITY)
+
         key_share,nonce = self.cryptobox.key_share_init()
 
         serverHello = messages.ServerHello(
@@ -65,7 +71,7 @@ class Server(messages_pb2_grpc.ServerServicer):
         )
 
         if not self.cryptobox.check_integrity(self.server_hello,req.integrity):
-            ctx.abort(grpc.StatusCode.PERMISSION_DENIED,details=ERROR_DETAIL)
+            ctx.abort(grpc.StatusCode.PERMISSION_DENIED,details=ERROR_INTEGRITY)
 
         self.state = State.HANDSHAKE_FINSHED
         return verifyClientHandshake
@@ -93,5 +99,5 @@ def serve():
 
 
 if __name__ == '__main__':
-    logging.basicConfig()
+    logging.basicConfig(level=logging.DEBUG)
     serve()
