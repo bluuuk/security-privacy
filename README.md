@@ -1,33 +1,47 @@
-# security-privacy
 
-## Generate a Public/Private Key Pair
+
+# Assignment 1
+
+## How to set everything up
+
+```bash
+cd assignment1
+virtualenv super
+source ./super/bin/activate
+pip install -r requirements.txt
+```
+
+This creates a virtual environment and installs the needed python packages. 
+
+## How to execute everything
+
+> Assuming you are still in /assignment1
+
+In the folder `client` is the file `data.csv` that is supposed to be encrypted, send to the server and decrypted. At
+the moment, it just contains a test string because the actual data send is to big to be pushed to the repo. Therefore,
+exchange the file with `data.csv` (name is hard coded, so please stick to it).
+
+Open one bash terminal and start the server(_delentture_):
+
+```bash
+python3 server.py
+```
+
+Open one additional terminal and start the client(_controlER_)
+
+```bash
+python3 client.py
+```
+
+## The Public/Private Key Pair
+
+The Public/Private Key Pair for Server/Client was generated via openSSL. 
+
 ```
 openssl genrsa -out private.pem 2048 
 openssl rsa -in .pem -outform PEM -pubout -out public.pem
 ```
 
+### Protocol
 
-# Threat Model
-
-- Passive Man in the Middle (MitM) Attacker
-- Active Man in the Middle (MitM) Attacker
-
-## Threats
-
-- Reading confidential data
-- Manipulating data
-- Impersonating the other side
-
-# Communication Scheme
-
-All in all, we are tasked to recreate the _Transport Layer Security_ protocol that is used in everyday web-browing. Here are short overview over TLS 1.3:
-
-![TLS 1.3 Handshake](https://www.wolfssl.com/wordpress/wp-content/uploads/2018/05/graphicB.png)
-
-We can reduce the inital messages but keep the idea of the protocol:
-
-![Our own protocol]()
-
-# Removing integrity and authenticity
-
-Totally stupid idea :(
+![Protocol](Protocol.png)
