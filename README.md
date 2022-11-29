@@ -15,7 +15,11 @@ This creates a virtual environment and installs the needed python packages.
 
 ## How to execute everything
 
-> Assuming you are still in /assignment1
+While still sourcing the virtual environment, go to the encryption folder
+
+```bash
+cd encryption
+```
 
 In the folder `client` is the file `data.csv` that is supposed to be encrypted, send to the server and decrypted. At
 the moment, it just contains a test string because the actual data send is to big to be pushed to the repo. Therefore,
