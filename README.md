@@ -1,6 +1,6 @@
 
 
-# Assignment 1
+# Assignment 1 - Authenticated and Secured Transport like TLS
 
 ## How to set everything up
 
